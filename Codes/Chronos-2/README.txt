@@ -1,0 +1,1 @@
+The codes related to GTT are adapted from https://github.com/amazon-science/chronos-forecasting.

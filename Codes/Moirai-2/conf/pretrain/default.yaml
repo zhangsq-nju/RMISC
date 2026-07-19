@@ -1,0 +1,72 @@
+hydra:
+  run:
+    dir: outputs/Moirai2_${oc.env:UNI2TS_TRAINING_DATA_TAG}
+defaults:
+  ### 修改了默认配置：指定默认model/train_data/val_data，torchrun无需额外Hydra参数即可启动。
+  - model: moirai_base
+  - train_data: train
+  - val_data: val
+  - _self_
+
+### 修改了run_name默认值：torchrun无需额外Hydra参数即可生成输出目录。
+run_name: pretrain
+seed: 0
+tf32: true
+compile: false  # set to mode: default, reduce-overhead, max-autotune
+ckpt_path: null  # optional Lightning ckpt path for old checkpoints
+trainer:
+  _target_: lightning.Trainer
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 32
+  logger:
+      _target_: lightning.pytorch.loggers.TensorBoardLogger
+      save_dir: ${hydra:runtime.output_dir}
+      name: logs
+  callbacks: []
+  ### 修改了checkpoint保存：删除旧ModelCheckpoint/HuggingFaceCheckpoint。
+  ### 改由train.py动态添加PretrainStateCheckpoint，保存用户指定的断点续训文件。
+  ### 修改了epoch配置：训练轮数由train.py从--num-epochs写入。
+  enable_progress_bar: true
+  accumulate_grad_batches: 2
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
+  enable_checkpointing: false #如果要保存ckpt格式，可以设置为true。我们已经保存了更轻量的PretrainStateCheckpoint，包含训练状态和模型权重。
+train_dataloader:
+  _target_: uni2ts.data.loader.DataLoader
+  batch_size_per_rank: 128 # 这里调整batch_size
+  batch_size_factor: 2.0 #这个参数用于PackCollate，最终训练batchsize还是batch_size_per_rank。
+  cycle: true
+  shuffle: true
+  num_workers: 0
+  collate_fn:
+    _target_: uni2ts.data.loader.PackCollate
+    max_length: ${model.module_kwargs.max_seq_len}
+    seq_fields: ${cls_getattr:${model._target_},seq_fields}
+    pad_func_map: ${cls_getattr:${model._target_},pad_func_map}
+  pin_memory: true
+  drop_last: true
+  fill_last: false
+  worker_init_fn: null
+  prefetch_factor: 2
+  persistent_workers: false
+val_dataloader:
+  _target_: uni2ts.data.loader.DataLoader
+  batch_size_per_rank: 128
+  batch_size_factor: 2.0
+  cycle: false
+  shuffle: false
+  num_workers: 0
+  collate_fn:
+    _target_: uni2ts.data.loader.PackCollate
+    max_length: ${model.module_kwargs.max_seq_len}
+    seq_fields: ${cls_getattr:${model._target_},seq_fields}
+    pad_func_map: ${cls_getattr:${model._target_},pad_func_map}
+  pin_memory: true
+  drop_last: false
+  fill_last: false
+  worker_init_fn: null
+  prefetch_factor: 2
+  persistent_workers: false

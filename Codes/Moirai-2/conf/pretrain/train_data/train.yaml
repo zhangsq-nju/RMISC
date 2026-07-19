@@ -1,0 +1,8 @@
+_target_: uni2ts.data.builder.indexed_npy.IndexedNpyDatasetBuilder
+split: train
+### 修改了数据配置：删除cov/include_covariates配置，Moirai2预训练只使用target。
+context_length: 1984
+prediction_length: 64
+distance: 1
+patch_size: 16
+shuffle: true

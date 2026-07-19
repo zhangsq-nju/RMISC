@@ -1,0 +1,1 @@
+The codes related to Moirai-2 are adapted from https://github.com/SalesforceAIResearch/uni2ts.

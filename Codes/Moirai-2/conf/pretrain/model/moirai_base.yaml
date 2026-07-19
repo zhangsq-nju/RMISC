@@ -1,0 +1,24 @@
+_target_: uni2ts.model.moirai2.Moirai2Pretrain
+module_kwargs:
+  _target_: builtins.dict
+  d_model: 768
+  d_ff: 3072
+  num_layers: 12
+  patch_size: 16
+  max_seq_len: 128 #2048/16
+  attn_dropout_p: 0.0
+  dropout_p: 0.0
+  scaling: true
+  num_predict_token: 4  # ### 修改为multi-token预测：1984 context一次预测64点/4个patch。
+min_patches: 2
+min_mask_ratio: 0.15
+max_mask_ratio: 0.5
+max_dim: 128
+loss_func:
+  _target_: uni2ts.loss.packed.PackedQuantileMAELoss
+lr: 1e-3
+weight_decay: 1e-1
+beta1: 0.9
+beta2: 0.98
+num_training_steps: 1  # ### 修改了训练步数默认值，train.py根据--training-data-paths自动覆盖。
+num_warmup_steps: 10_000
